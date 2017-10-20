@@ -1,6 +1,6 @@
 # MIRU-profiler
 
-MIRU-profiler -- performs digital 24-loci MIRU-VNTR typing for Mycobacterium tuberculosis
+MIRU-profiler -- performs digital 24-loci MIRU-VNTR typing for *Mycobacterium tuberculosis*
 
 ## Pre-requiste
 
