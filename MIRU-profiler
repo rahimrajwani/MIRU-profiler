@@ -1,0 +1,91 @@
+#!/bin/bash
+##Copyright (C) 2017  Rahim Rajwani (rahimrajwani@gmail.com)
+##This program is free software: you can redistribute it and/or modify
+##it under the terms of the GNU General Public License as published by
+##the Free Software Foundation, either version 3 of the License, or
+##(at your option) any later version.
+##
+##This program is distributed in the hope that it will be useful,
+##but WITHOUT ANY WARRANTY; without even the implied warranty of
+##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##GNU General Public License for more details.
+##
+##You should have received a copy of the GNU General Public License
+##along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##
+##################################################################
+################# SETTING UP OPTIONS #############################
+##################################################################
+usage="MIRU-profiler -- performs digital 24-loci MIRU-VNTR typing for Mycobacterium tuberculosis\n
+Options: [-h] [-e -i -o -s]\n
+where:\n
+-h=Prints this help text\n
+-e=Define the acceptable variation (in bp) between amplicon size in sequence and reference MIRU table [Default: 5]\n
+-i=Define input file or a directory of fasta files [Required]\n
+-o=Set the output directory for the intermediate files [Default: OUTPUT]\n
+-s=Set the directory for supporting files [Default: Supporting_files]"
+ERROR_RANGE=5
+OUTPUT_FOLDER=OUTPUT
+Supporting_files=Supporting_files
+while getopts 'e:i:o:s:h' options; do
+    case "${options}" in
+        h)  echo -e $usage    		;;
+        e)  ERROR_RANGE="${OPTARG}"  	;;
+        i)  INPUT_FILES="${OPTARG}"	;;
+        o)  OUTPUT_FOLDER="${OPTARG}"	;;
+        s)  Supporting_files="${OPTARG}";;
+	*)  echo $usage			;;
+esac
+done
+shift $((OPTIND-1))
+##### SETTING UP OUTPUT FILES AND FOLDER #########################
+printf "Filename\tMIRU02\tMtub04\tETRC\tMIRU04\tMIRU40\tMIRU10\tMIRU16\tMtub21\tMIRU20\tQUB11b\tETRA\tMtub29\tMtub30\tETRB\tMIRU23\tMIRU24\tMIRU26\tMIRU27\tMtub34\tMIRU31\tMtub39\tQUB26\tQUB4156\tMIRU39\n"  >> 24MIRU_results
+mkdir -p $OUTPUT_FOLDER
+##################################################################
+### DETECTING AMPLICON SIZE AT 24-LOCI MIRU-VNTR #################
+##################################################################
+## SETTING A LOOP INCASE MULTIPLE FILES NEED TO BE PROCESSED #####
+for f in $INPUT_FILES
+do
+	## SETTING NAMES OF INTERMEDIATE FILES ###################
+	Sizes=$OUTPUT_FOLDER/$(basename $f).sizes
+	Amplicons=$OUTPUT_FOLDER/$(basename $f).amplicons
+	## SEARCH THE PRIMERS AND GENERATES AMPLICONS ############
+	primersearch -auto -seqall $f -infile $Supporting_files/MIRU_primers -outfile $Amplicons -mismatchpercent 0
+	## REFORMATS THE AMPLICONS FILE FOR PARSING ##############
+	perl -i -p -e 's/\n/ /' $Amplicons
+	### GENERATES SIZE TABLE ################################
+	grep -oP ': [0-9]{2,4}' $Amplicons | grep -oP '[0-9]{2,4}' > $Sizes
+##################################################################
+###  COMPUTING ALLELE NUMBERS BASED ON AMPLICON SIZE #############
+##################################################################
+let Line_num=1
+let Colum_num=2
+All_loci=$(cut -f1 $Supporting_files/MIRU_primers)
+	for Allele_at_given_locus in $All_loci 
+	do	
+		## COMPUTES ALLELE NUMBER BASED ON AMPLICON SIZE FOR EACH LOCUS
+		if grep -q "Primer name $Allele_at_given_locus Amplimer 1" $Amplicons; then 
+ 			SIZE_AT_LOCUS=$(sed "${Line_num}q;d" $Sizes)
+			let lowerbound=SIZE_AT_LOCUS-ERROR_RANGE
+			let upperbound=SIZE_AT_LOCUS+ERROR_RANGE
+			eval "$Allele_at_given_locus=$(cut -f 1,$Colum_num $Supporting_files/MIRU_table | awk -v x="$lowerbound" -v y="$upperbound" '$NF >= x && $NF <= y {print $1}' )";
+					## FLAGS AS DIFFERENT ALLELE IF ALLELE NUMBER MISMATCHES WITH TABLE
+					current_variable="$(cut -f 1,$Colum_num $Supporting_files/MIRU_table | awk -v x="$lowerbound" -v y="$upperbound" '$NF >= x && $NF <= y {print $1}' )";
+					 if [ -z "${current_variable-unset}" ]; then
+					    eval "$Allele_at_given_locus=UNKNOWN_ALLELE_NUM"
+					 fi
+			let Line_num++
+			let Colum_num++	
+				else
+					## FLAGS IF AMPLICON IS NOT DETECTED
+    					eval "$Allele_at_given_locus=$(echo NOT_DETECTED)"
+					let Colum_num++
+		fi
+		
+	done
+######################################################################
+########################### PRINTING #################################
+######################################################################
+printf $f"\t"$MIRU02"\t"$Mtub04"\t"$ETRC"\t"$MIRU04"\t"$MIRU40"\t"$MIRU10"\t"$MIRU16"\t"$Mtub21"\t"$MIRU20"\t"$QUB11b"\t"$ETRA"\t"$Mtub29"\t"$Mtub30"\t"$ETRB"\t"$MIRU23"\t"$MIRU24"\t"$MIRU26"\t"$MIRU27"\t"$Mtub34"\t"$MIRU31"\t"$Mtub39"\t"$QUB26"\t"$QUB4156"\t"$MIRU39"\n"  >> 24MIRU_results
+done
