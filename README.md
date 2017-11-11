@@ -2,9 +2,18 @@
 
 MIRU-profiler -- performs digital 24-loci MIRU-VNTR typing for *Mycobacterium tuberculosis*
 
-## Pre-requiste
+## For Windows 10 users
+
+Should you wish to run MIRU-profiler on Windows 10 please install bash-shell first:
+
+https://www.windowscentral.com/how-install-bash-shell-command-line-windows-10
+
+## Install dependencies
 
 EMBOSS (version:6.6.0.0)
+```
+./sudo apt install emboss
+```
 
 ## Usage
 ```
