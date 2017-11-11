@@ -12,7 +12,7 @@ https://www.windowscentral.com/how-install-bash-shell-command-line-windows-10
 
 EMBOSS (version:6.6.0.0)
 ```
-./sudo apt install emboss
+sudo apt install emboss
 ```
 
 ## Usage
