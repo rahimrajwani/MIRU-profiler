@@ -8,6 +8,11 @@ Should you wish to run MIRU-profiler on Windows 10 please install bash-shell fir
 
 https://www.windowscentral.com/how-install-bash-shell-command-line-windows-10
 
+## Video demonstration
+
+[![Please click for a video demonstration](https://github.com/rahimrajwani/MIRU-profiler/blob/master/Demonstration.png)](https://youtu.be/0TWioBzPcNU)
+
+
 ## Install dependencies
 
 EMBOSS (version:6.6.0.0)
